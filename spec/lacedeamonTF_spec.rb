@@ -4,7 +4,7 @@ require 'pry'
 
 describe "sending a post request" do
 
- it "should create a new todo" do
+ it "should POST a new todo" do
    # Execute
    todo = Faraday.post("http://lacedeamon.spartaglobal.com/todos", {title: "Oz and Nick", due: "2017-05-04"})
 
@@ -31,27 +31,50 @@ describe "sending a post request" do
     expect(todo.body.include? "You must provide the following parameters: <title> and <due>. You provided: ").to eq true
   end
 
-
 end
 
 describe "negative testing : expect failure" do
 
   it "should not create post with a due date in the past" do
+    #Execute
     todo = Faraday.post("http://lacedeamon.spartaglobal.com/todos", {title: "Oz and Nick", due: "1017-05-04"})
+    #Verfiy
     expect(todo.status).to eq 422 # Unprocessable entity
     expect(todo.body.include? "The following parameter <due> should be a date in the present or future").to eq true
 
+    #Teardown
     resp = JSON.parse(todo.body)
     resp = resp['id']
     resp = Faraday.delete("http://lacedeamon.spartaglobal.com/todos/#{resp}")
     expect(resp.status).to eq 204 # No content response
   end
 
-  it "should not create post with a due date in the future" do
+  it "should not create POST with a due date in the future" do
+    #Execute
     todo = Faraday.post("http://lacedeamon.spartaglobal.com/todos", {title: "Oz and Nick", due: "3017-05-04"})
+    #Verify
     expect(todo.status).to eq 422 # Unprocessable entity
     expect(todo.body.include? "The following parameter <due> should be a date in the present or past").to eq true
+    #Teardown
+    resp = JSON.parse(todo.body)
+    resp = resp['id']
+    resp = Faraday.delete("http://lacedeamon.spartaglobal.com/todos/#{resp}")
+    expect(resp.status).to eq 204 # No content response
+  end
 
+  it "should not modify todo with invalid id using PATCH request" do
+    #Execute
+    todo = Faraday.post("http://lacedeamon.spartaglobal.com/todos", {title: "Oz and Nick", due: "2017-05-04"})
+    resp = JSON.parse(todo.body)
+    resp = resp['id']
+
+    modify = Faraday.patch("http://lacedeamon.spartaglobal.com/todos/761827", {title: "We are sparta"})
+    mod_resp = JSON.parse(modify.body)
+    #Verify
+    expect(modify.status).to eq 200
+    expect(mod_resp['title']).to eq "We are sparta"
+
+    # Teardown
     resp = JSON.parse(todo.body)
     resp = resp['id']
     resp = Faraday.delete("http://lacedeamon.spartaglobal.com/todos/#{resp}")
@@ -88,7 +111,7 @@ end
 
 describe "change existing posts using PATCH" do
 
-  it "should be able to modify todo with PATCH request" do
+  it "should be able to modify title of todo post with PATCH request" do
     todo = Faraday.post("http://lacedeamon.spartaglobal.com/todos", {title: "Oz and Nick", due: "2017-05-04"})
     resp = JSON.parse(todo.body)
     resp = resp['id']
@@ -97,6 +120,29 @@ describe "change existing posts using PATCH" do
     mod_resp = JSON.parse(modify.body)
     expect(modify.status).to eq 200
     expect(mod_resp['title']).to eq "We are sparta"
+
+    # Teardown
+    resp = JSON.parse(todo.body)
+    resp = resp['id']
+    resp = Faraday.delete("http://lacedeamon.spartaglobal.com/todos/#{resp}")
+    expect(resp.status).to eq 204 # No content response
+  end
+
+  it "should be able to modify date of todo post with PATCH request" do
+    todo = Faraday.post("http://lacedeamon.spartaglobal.com/todos", {title: "Oz and Nick", due: "2017-05-04"})
+    resp = JSON.parse(todo.body)
+    resp = resp['id']
+
+    modify = Faraday.patch("http://lacedeamon.spartaglobal.com/todos/#{resp}", {due: "2011-01-01"})
+    mod_resp = JSON.parse(modify.body)
+    expect(modify.status).to eq 200
+    expect(mod_resp['due']).to eq "2011-01-01"
+
+    # Teardown
+    resp = JSON.parse(todo.body)
+    resp = resp['id']
+    resp = Faraday.delete("http://lacedeamon.spartaglobal.com/todos/#{resp}")
+    expect(resp.status).to eq 204 # No content response
   end
 
 end
