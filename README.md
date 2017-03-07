@@ -1,5 +1,5 @@
 # Lacedeamon TODO API Testing
 
-A test framework for the API [title](http://http://lacedeamon.spartaglobal.com/)
+A test framework for the [Lacedeamon Sparta Global Todo](http://http://lacedeamon.spartaglobal.com/) API
 
 ## 
